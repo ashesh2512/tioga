@@ -23,6 +23,7 @@
 #include "codetypes.h"
 #include "MeshBlock.h"
 #include "tioga_gpu.h"
+#include "gpu_global_functions.h"
 
 extern "C" {
   void findOBB(double *x,double xc[3],double dxc[3],double vec[3][3],int nnodes);

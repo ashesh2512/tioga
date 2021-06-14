@@ -1,3 +1,6 @@
+#ifndef GPU_DEVICE_FUNCTIONS_H
+#define GPU_DEVICE_FUNCTIONS_H
+
 #include "tioga_gpu.h"
 #include <cmath>
 
@@ -44,4 +47,4 @@ void d_searchIntersections_containment(int idx, int cellIndex[2],
   int ndim,
   int *nchecks);
 
-
+#endif /* GPU_DEVICE_FUNCTIONS_H */
