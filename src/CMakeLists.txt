@@ -27,6 +27,8 @@ target_sources(tioga PRIVATE
   exchangeDonors.C
   exchangeSearchData.C
   getCartReceptors.C
+  gpu_device_functions.C
+  gpu_global_functions.C
   highOrder.C
   holeMap.C
   linCartInterp.C

@@ -1,5 +1,5 @@
 #include "dMeshBlock.h"
-#include "gpu_global_functions.h"
+#include "gpu_global_functions.C"
 #include<chrono>
 #include<thread>
 \
