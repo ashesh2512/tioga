@@ -19,6 +19,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "codetypes.h"
 #include "MeshBlock.h"
+#include "gpu_global_functions.h"
 #include <unordered_map>
 #include <iostream>
 
@@ -246,8 +247,40 @@ findOBB(xsearch,obq->xc,obq->dxc,obq->vec,nsearch);
 #endif
   //
 #ifdef TIOGA_HAS_GPU
-  dMB->search(adt,elementList,xsearch,donorId,nsearch);
-  for(i=0;i<nsearch;i++) donorId[i]=donorId[xtag[i]];
+   int nelem=adt->get_nelem();
+   int ndim=adt->get_ndim();
+   //
+   // create gpu memory
+   //
+   double *adtExtents =TIOGA::gpu::push_to_device<double>(adt->get_Extents(),sizeof(double)*ndim);
+   int    *adtIntegers=TIOGA::gpu::push_to_device<int>(adt->get_Integers(),sizeof(int)*nelem*4);
+   double *adtReals=TIOGA::gpu::push_to_device<double>(adt->get_Reals(),sizeof(double)*nelem*ndim);
+   double *coord=TIOGA::gpu::push_to_device<double>(adt->get_coord(),sizeof(double)*nelem*ndim);
+   int    *elementList=TIOGA::gpu::push_to_device<int>(elementList_host,sizeof(int)*nelem);
+   int    *donorId=TIOGA::gpu::push_to_device<int>(donorId_host,sizeof(int)*nsearch);
+   double *xsearch=TIOGA::gpu::push_to_device<double>(xsearch_host,sizeof(double)*nsearch*3);
+   //
+   // perform the gpu based adt search now
+   //
+   int n_blocks = nsearch/block_size + (nsearch%block_size == 0 ? 0:1);
+   TIOGA_GPU_LAUNCH_FUNC(g_adt_search,n_blocks,block_size,0,0,m_info_device,
+                         coord,adtExtents,adtIntegers,adtReals,
+                         elementList,donorId,xsearch,ndim,nelem,nsearch,myid);
+
+   TIOGA::gpu::synchronize();
+   TIOGA::gpu::pull_from_device<int>(donorId_host,donorId,sizeof(int)*nsearch);
+   //
+   //release all gpu memory
+   //
+   TIOGA_FREE_DEVICE(adtExtents);
+   TIOGA_FREE_DEVICE(adtIntegers);
+   TIOGA_FREE_DEVICE(adtReals);
+   TIOGA_FREE_DEVICE(coord);
+   TIOGA_FREE_DEVICE(elementList);
+   TIOGA_FREE_DEVICE(donorId);
+   TIOGA_FREE_DEVICE(xsearch);
+
+   for(i=0;i<nsearch;i++) donorId[i]=donorId[xtag[i]];
 #else
   donorCount=0;
   ipoint=0; 

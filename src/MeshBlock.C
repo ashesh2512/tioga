@@ -113,11 +113,11 @@ void MeshBlock::setData(TIOGA::MeshBlockInfo* minfo)
     throw std::runtime_error("#tioga: global IDs for nodes not provided");
 #endif
 
-#ifdef TIOGA_HAS_GPU
-  if (!dMB) dMB.reset(new TIOGA::dMeshBlock);
-  dMB->setMinfo(m_info,myid);
-#endif
-
+  if (m_info_device == nullptr) {
+    m_info_device = TIOGA::gpu::allocate_on_device<TIOGA::MeshBlockInfo>(
+      sizeof(TIOGA::MeshBlockInfo));
+  }
+  TIOGA::gpu::copy_to_device(m_info_device, m_info, sizeof(TIOGA::MeshBlockInfo));
 }
 
 void MeshBlock::preprocess(void)
@@ -126,9 +126,14 @@ void MeshBlock::preprocess(void)
   //
   // set all iblanks = 1
   //
-  for(i=0;i<nnodes;i++) iblank[i]=1;
 #ifdef TIOGA_HAS_GPU
-  dMB->resetIblanks();
+  int n_blocks = nnodes/block_size + (nnodes%block_size == 0 ? 0:1);
+  TIOGA_GPU_LAUNCH_FUNC(g_reset_iblanks, n_blocks, block_size, 0, 0, m_info_device);
+  TIOGA::gpu::synchronize();
+  TIOGA::gpu::pull_from_device(
+    m_info->iblank_node.hptr, m_info->iblank_node.dptr, sizeof(int)*nnodes);
+#else
+  for(i=0;i<nnodes;i++) iblank[i]=1;
 #endif
   //
   // find oriented bounding boxes

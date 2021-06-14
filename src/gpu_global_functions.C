@@ -1,7 +1,6 @@
 #include "gpu_global_functions.h"
-#include "gpu_device_functions.C"
+#include "gpu_device_functions.h"
 
-TIOGA_GPU_GLOBAL
 void g_reset_iblanks(TIOGA::MeshBlockInfo * m_info)
 {
   int *iblank=m_info->iblank_node.dptr;
@@ -14,10 +13,8 @@ void g_reset_iblanks(TIOGA::MeshBlockInfo * m_info)
 #endif
     iblank[idx]=1;
   }
-
 }
 
-TIOGA_GPU_GLOBAL
 void g_adt_search(TIOGA::MeshBlockInfo* m_info, 
   double *coord, double *adtExtents, int *adtIntegers, double *adtReals,
   int *elementList, int *donorId, double *xsearch,
